@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#059669">
+  <title>Habit Tracker — Step 2</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .habit-check {
+      transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    }
+    .habit-check:active {
+      transform: scale(0.92);
+    }
+    .progress-fill {
+      transition: width 250ms ease;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen antialiased">
+  <main class="max-w-lg mx-auto px-4 py-6 sm:py-10 pb-12">
+    <!-- Header -->
+    <header class="mb-5">
+      <div class="flex items-center justify-between gap-2">
+        <p id="today-date" class="text-xs font-semibold uppercase tracking-wider text-emerald-600"></p>
+        <span id="save-status" class="text-[11px] font-medium text-slate-400">Saved on device</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mt-1">Habit Tracker</h1>
+      <p class="text-sm text-slate-500 mt-0.5">Track your daily habits across the month and year.</p>
+    </header>
+
+    <!-- View Tabs -->
+    <nav aria-label="Views" class="grid grid-cols-3 bg-slate-200/70 p-1 rounded-xl mb-5">
+      <button
+        type="button"
+        id="tab-today"
+        data-tab="today"
+        aria-selected="true"
+        class="tab-btn py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer bg-white text-slate-900 shadow-sm"
+      >
+        Today
+      </button>
+      <button
+        type="button"
+        id="tab-month"
+        data-tab="month"
+        aria-selected="false"
+        class="tab-btn py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer text-slate-600 hover:text-slate-900"
+      >
+        Month
+      </button>
+      <button
+        type="button"
+        id="tab-year"
+        data-tab="year"
+        aria-selected="false"
+        class="tab-btn py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer text-slate-600 hover:text-slate-900"
+      >
+        Year
+      </button>
+    </nav>
+
+    <!-- ================= TODAY VIEW ================= -->
+    <div id="view-today">
+      <!-- Date Switcher -->
+      <div class="flex items-center justify-between gap-2 mb-4 bg-white rounded-xl border border-slate-200/80 px-2 py-1.5 shadow-sm">
+        <button
+          type="button"
+          id="prev-day-btn"
+          aria-label="Previous day"
+          class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 transition-colors cursor-pointer"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="12 4 6 10 12 16"></polyline>
+          </svg>
+        </button>
+        <div class="text-center min-w-0">
+          <p id="selected-date-label" class="text-sm font-semibold text-slate-800 truncate"></p>
+          <button
+            type="button"
+            id="jump-today-btn"
+            class="hidden text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 cursor-pointer"
+          >
+            Back to Today
+          </button>
+        </div>
+        <button
+          type="button"
+          id="next-day-btn"
+          aria-label="Next day"
+          class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 active:bg-slate-200 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="8 4 14 10 8 16"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Progress Card -->
+      <section aria-label="Daily progress" class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 mb-5">
+        <div class="flex items-center justify-between gap-2 mb-2.5">
+          <span id="progress-title" class="text-sm font-medium text-slate-700">Today's Progress</span>
+          <span id="progress-label" class="text-sm font-semibold text-emerald-700">0 of 0 completed</span>
+        </div>
+        <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+          <div id="progress-bar" class="progress-fill h-full bg-emerald-500 rounded-full" style="width: 0%;"></div>
+        </div>
+        <p id="progress-message" class="text-xs text-slate-500 mt-2.5"></p>
+      </section>
+
+      <!-- Add Habit Form -->
+      <form id="habit-form" class="mb-5" novalidate>
+        <label for="habit-input" class="sr-only">New habit</label>
+        <div class="flex gap-2">
+          <input
+            id="habit-input"
+            type="text"
+            maxlength="80"
+            placeholder="Add a habit (e.g., Stretch for 10 min)"
+            autocomplete="off"
+            class="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+          >
+          <button
+            type="submit"
+            class="shrink-0 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-colors cursor-pointer"
+          >
+            Add
+          </button>
+        </div>
+        <p id="form-error" class="text-xs text-rose-600 mt-1.5 hidden" role="alert"></p>
+      </form>
+
+      <!-- Habit List -->
+      <section aria-label="Your habits">
+        <ul id="habit-list" class="space-y-2.5"></ul>
+        <div id="empty-state" class="hidden text-center bg-white rounded-2xl border border-dashed border-slate-200 p-8">
+          <p class="text-sm font-medium text-slate-700">No habits yet</p>
+          <p class="text-xs text-slate-500 mt-1">Type a daily habit above and click Add to get started.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= MONTH VIEW ================= -->
+    <section id="view-month" class="hidden" aria-label="Monthly progress">
+      <!-- Month Header & Filter -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 mb-4">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <button
+            type="button"
+            id="prev-month-btn"
+            aria-label="Previous month"
+            class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="12 4 6 10 12 16"></polyline>
+            </svg>
+          </button>
+          <h2 id="month-title" class="text-base font-bold text-slate-900"></h2>
+          <button
+            type="button"
+            id="next-month-btn"
+            aria-label="Next month"
+            class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="8 4 14 10 8 16"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <label for="month-habit-filter" class="sr-only">Filter by habit</label>
+        <select
+          id="month-habit-filter"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+        ></select>
+      </div>
+
+      <!-- Month Summary Stats -->
+      <div class="grid grid-cols-3 gap-2.5 mb-4">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3.5 text-center">
+          <p id="month-stat-rate" class="text-xl font-bold text-emerald-600">0%</p>
+          <p class="text-[11px] font-medium text-slate-500 mt-0.5">Completion</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3.5 text-center">
+          <p id="month-stat-days" class="text-xl font-bold text-slate-900">0</p>
+          <p class="text-[11px] font-medium text-slate-500 mt-0.5">Active Days</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3.5 text-center">
+          <p id="month-stat-checkins" class="text-xl font-bold text-slate-900">0</p>
+          <p class="text-[11px] font-medium text-slate-500 mt-0.5">Check-ins</p>
+        </div>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
+        <div class="grid grid-cols-7 gap-1.5 text-center text-[11px] font-semibold text-slate-400 mb-2">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div id="month-calendar-grid" class="grid grid-cols-7 gap-1.5"></div>
+        <div class="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+          <span>Tap any past/today date to edit</span>
+          <div class="flex items-center gap-1">
+            <span>Less</span>
+            <span class="w-3 h-3 rounded bg-slate-100 border border-slate-200 inline-block"></span>
+            <span class="w-3 h-3 rounded bg-emerald-200 inline-block"></span>
+            <span class="w-3 h-3 rounded bg-emerald-400 inline-block"></span>
+            <span class="w-3 h-3 rounded bg-emerald-600 inline-block"></span>
+            <span>More</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= YEAR VIEW ================= -->
+    <section id="view-year" class="hidden" aria-label="Yearly progress">
+      <!-- Year Header & Filter -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 mb-4">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <button
+            type="button"
+            id="prev-year-btn"
+            aria-label="Previous year"
+            class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="12 4 6 10 12 16"></polyline>
+            </svg>
+          </button>
+          <h2 id="year-title" class="text-base font-bold text-slate-900"></h2>
+          <button
+            type="button"
+            id="next-year-btn"
+            aria-label="Next year"
+            class="w-10 h-10 rounded-lg flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="8 4 14 10 8 16"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <label for="year-habit-filter" class="sr-only">Filter year by habit</label>
+        <select
+          id="year-habit-filter"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+        ></select>
+      </div>
+
+      <!-- Year Summary Stats -->
+      <div class="grid grid-cols-3 gap-2.5 mb-4">
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3.5 text-center">
+          <p id="year-stat-rate" class="text-xl font-bold text-emerald-600">0%</p>
+          <p class="text-[11px] font-medium text-slate-500 mt-0.5">Year Rate</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3.5 text-center">
+          <p id="year-stat-checkins" class="text-xl font-bold text-slate-900">0</p>
+          <p class="text-[11px] font-medium text-slate-500 mt-0.5">Total Check-ins</p>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-3.5 text-center">
+          <p id="year-stat-best-month" class="text-xl font-bold text-slate-900">—</p>
+          <p class="text-[11px] font-medium text-slate-500 mt-0.5">Best Month</p>
+        </div>
+      </div>
+
+      <!-- 12-Month Breakdown Grid -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-slate-800">12-Month Breakdown</h3>
+          <span class="text-[11px] text-slate-400">Tap a month to open</span>
+        </div>
+        <div id="year-months-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. DATE HELPERS: Format dates consistently as "YYYY-MM-DD" in local time.
+    // =========================================================================
+    function formatDateKey(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function parseDateKey(key) {
+      const [y, m, d] = key.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function addDays(dateKey, delta) {
+      const date = parseDateKey(dateKey);
+      date.setDate(date.getDate() + delta);
+      return formatDateKey(date);
+    }
+
+    function getDaysInMonth(year, monthIndex) {
+      return new Date(year, monthIndex + 1, 0).getDate();
+    }
+
+    const MONTH_NAMES = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const SHORT_MONTHS = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    const todayDate = new Date();
+    const todayKey = formatDateKey(todayDate);
+
+    // =========================================================================
+    // 2. STATE & STORAGE: Save/load habits and date history in localStorage.
+    // =========================================================================
+    const STORAGE_KEY = "habit_tracker_v2_data";
+
+    const DEFAULT_HABITS = [
+      { id: 1, name: "Drink 8 glasses of water", history: {} },
+      { id: 2, name: "Read for 15 minutes", history: {} },
+      { id: 3, name: "Take a 20-minute walk", history: {} }
+    ];
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          return { nextId: 4, habits: DEFAULT_HABITS.map((h) => ({ ...h, history: {} })) };
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.habits)) {
+          return { nextId: 4, habits: DEFAULT_HABITS.map((h) => ({ ...h, history: {} })) };
+        }
+        const cleaned = parsed.habits.map((h, idx) => ({
+          id: typeof h.id === "number" ? h.id : idx + 1,
+          name: String(h.name || "Untitled habit"),
+          history: h.history && typeof h.history === "object" ? h.history : {}
+        }));
+        const maxId = cleaned.reduce((max, h) => Math.max(max, h.id), 0);
+        return { nextId: Math.max(parsed.nextId || 1, maxId + 1), habits: cleaned };
+      } catch (err) {
+        return { nextId: 4, habits: DEFAULT_HABITS.map((h) => ({ ...h, history: {} })) };
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ nextId, habits }));
+        saveStatusEl.textContent = "Saved on device";
+      } catch (err) {
+        saveStatusEl.textContent = "Memory only";
+      }
+    }
+
+    const initialState = loadState();
+    let nextId = initialState.nextId;
+    let habits = initialState.habits;
+
+    let activeTab = "today"; // "today" | "month" | "year"
+    let selectedDateKey = todayKey;
+    let viewMonthYear = todayDate.getFullYear();
+    let viewMonthIndex = todayDate.getMonth();
+    let viewYear = todayDate.getFullYear();
+    let selectedHabitFilter = "all"; // "all" or string habit id
+
+    // =========================================================================
+    // 3. ELEMENTS: References to HTML elements we update.
+    // =========================================================================
+    const todayDateEl = document.getElementById("today-date");
+    const saveStatusEl = document.getElementById("save-status");
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const viewTodayEl = document.getElementById("view-today");
+    const viewMonthEl = document.getElementById("view-month");
+    const viewYearEl = document.getElementById("view-year");
+
+    // Today view elements
+    const prevDayBtn = document.getElementById("prev-day-btn");
+    const nextDayBtn = document.getElementById("next-day-btn");
+    const selectedDateLabelEl = document.getElementById("selected-date-label");
+    const jumpTodayBtn = document.getElementById("jump-today-btn");
+    const progressTitleEl = document.getElementById("progress-title");
+    const progressLabelEl = document.getElementById("progress-label");
+    const progressBarEl = document.getElementById("progress-bar");
+    const progressMessageEl = document.getElementById("progress-message");
+    const habitFormEl = document.getElementById("habit-form");
+    const habitInputEl = document.getElementById("habit-input");
+    const formErrorEl = document.getElementById("form-error");
+    const habitListEl = document.getElementById("habit-list");
+    const emptyStateEl = document.getElementById("empty-state");
+
+    // Month view elements
+    const prevMonthBtn = document.getElementById("prev-month-btn");
+    const nextMonthBtn = document.getElementById("next-month-btn");
+    const monthTitleEl = document.getElementById("month-title");
+    const monthHabitFilterEl = document.getElementById("month-habit-filter");
+    const monthStatRateEl = document.getElementById("month-stat-rate");
+    const monthStatDaysEl = document.getElementById("month-stat-days");
+    const monthStatCheckinsEl = document.getElementById("month-stat-checkins");
+    const monthCalendarGridEl = document.getElementById("month-calendar-grid");
+
+    // Year view elements
+    const prevYearBtn = document.getElementById("prev-year-btn");
+    const nextYearBtn = document.getElementById("next-year-btn");
+    const yearTitleEl = document.getElementById("year-title");
+    const yearHabitFilterEl = document.getElementById("year-habit-filter");
+    const yearStatRateEl = document.getElementById("year-stat-rate");
+    const yearStatCheckinsEl = document.getElementById("year-stat-checkins");
+    const yearStatBestMonthEl = document.getElementById("year-stat-best-month");
+    const yearMonthsGridEl = document.getElementById("year-months-grid");
+
+    todayDateEl.textContent = todayDate.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // =========================================================================
+    // 4. STATS HELPERS: Streaks, filtered habits, and completion rates.
+    // =========================================================================
+    function getStreak(habit) {
+      let streak = 0;
+      let cursor = habit.history[todayKey] ? todayKey : addDays(todayKey, -1);
+      while (habit.history[cursor]) {
+        streak += 1;
+        cursor = addDays(cursor, -1);
+      }
+      return streak;
+    }
+
+    function getFilteredHabits() {
+      if (selectedHabitFilter === "all") return habits;
+      const targetId = Number(selectedHabitFilter);
+      const match = habits.filter((h) => h.id === targetId);
+      if (match.length === 0) {
+        selectedHabitFilter = "all";
+        return habits;
+      }
+      return match;
+    }
+
+    function getDayCompletion(dateKey, targetHabits) {
+      const total = targetHabits.length;
+      if (total === 0) return { done: 0, total: 0, ratio: 0 };
+      const done = targetHabits.filter((h) => Boolean(h.history[dateKey])).length;
+      return { done, total, ratio: done / total };
+    }
+
+    function getMonthMetrics(year, monthIndex, targetHabits) {
+      const daysInMonth = getDaysInMonth(year, monthIndex);
+      let elapsedDays = 0;
+      let activeDays = 0;
+      let totalCheckins = 0;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const key = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const isFuture = key > todayKey;
+        if (!isFuture) {
+          elapsedDays += 1;
+        }
+        const { done } = getDayCompletion(key, targetHabits);
+        if (done > 0) {
+          activeDays += 1;
+          totalCheckins += done;
+        }
+      }
+
+      const denominator = elapsedDays * targetHabits.length;
+      const rate = denominator === 0 ? 0 : Math.round((totalCheckins / denominator) * 100);
+      return { daysInMonth, elapsedDays, activeDays, totalCheckins, rate };
+    }
+
+    // =========================================================================
+    // 5. RENDER FUNCTIONS: Keep Today, Month, and Year views synced with state.
+    // =========================================================================
+    function renderFilterDropdowns() {
+      const optionsHtml = [
+        `<option value="all">All Habits (${habits.length})</option>`,
+        ...habits.map((h) => `<option value="${h.id}">${escapeHtml(h.name)}</option>`)
+      ].join("");
+
+      monthHabitFilterEl.innerHTML = optionsHtml;
+      yearHabitFilterEl.innerHTML = optionsHtml;
+
+      const valid = selectedHabitFilter === "all" || habits.some((h) => String(h.id) === selectedHabitFilter);
+      if (!valid) selectedHabitFilter = "all";
+
+      monthHabitFilterEl.value = selectedHabitFilter;
+      yearHabitFilterEl.value = selectedHabitFilter;
+    }
+
+    function renderTodayView() {
+      const isToday = selectedDateKey === todayKey;
+      const selectedDateObj = parseDateKey(selectedDateKey);
+
+      selectedDateLabelEl.textContent = isToday
+        ? `Today · ${selectedDateObj.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+        : selectedDateObj.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+
+      jumpTodayBtn.classList.toggle("hidden", isToday);
+      nextDayBtn.disabled = isToday;
+      progressTitleEl.textContent = isToday ? "Today's Progress" : "Selected Day's Progress";
+
+      const total = habits.length;
+      const completed = habits.filter((h) => Boolean(h.history[selectedDateKey])).length;
+      const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      progressLabelEl.textContent = `${completed} of ${total} completed`;
+      progressBarEl.style.width = `${percent}%`;
+
+      if (total === 0) {
+        progressMessageEl.textContent = "Add your first habit below to start tracking.";
+      } else if (completed === total) {
+        progressMessageEl.textContent = isToday
+          ? "All done for today! Great job staying consistent."
+          : "Every habit was completed on this day.";
+      } else if (completed === 0) {
+        progressMessageEl.textContent = "Tap any habit below to mark it complete.";
+      } else {
+        progressMessageEl.textContent = `${percent}% complete — keep it going!`;
+      }
+
+      if (total === 0) {
+        habitListEl.innerHTML = "";
+        emptyStateEl.classList.remove("hidden");
+        return;
+      }
+
+      emptyStateEl.classList.add("hidden");
+      habitListEl.innerHTML = habits
+        .map((habit) => {
+          const isDone = Boolean(habit.history[selectedDateKey]);
+          const streak = getStreak(habit);
+          const cardClasses = isDone
+            ? "bg-emerald-50/70 border-emerald-200"
+            : "bg-white border-slate-200/80 hover:border-slate-300";
+          const checkClasses = isDone
+            ? "bg-emerald-500 border-emerald-500 text-white"
+            : "bg-white border-slate-300 text-transparent";
+          const textClasses = isDone
+            ? "line-through text-slate-400"
+            : "text-slate-800";
+          const streakBadge = streak > 0
+            ? `<span class="inline-flex items-center text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full mt-1">${streak}d streak</span>`
+            : "";
+
+          return `
+            <li class="flex items-center justify-between gap-3 rounded-2xl border p-3.5 shadow-sm transition-colors ${cardClasses}">
+              <button
+                type="button"
+                data-action="toggle"
+                data-id="${habit.id}"
+                aria-pressed="${isDone}"
+                class="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer py-0.5"
+              >
+                <span class="habit-check shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${checkClasses}" aria-hidden="true">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 10.5 8 14.5 16 6.5"></polyline>
+                  </svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-sm font-medium break-words ${textClasses}">${escapeHtml(habit.name)}</span>
+                  ${streakBadge}
+                </span>
+              </button>
+              <button
+                type="button"
+                data-action="delete"
+                data-id="${habit.id}"
+                aria-label="Delete ${escapeHtml(habit.name)}"
+                class="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <line x1="5" y1="5" x2="15" y2="15"></line>
+                  <line x1="15" y1="5" x2="5" y2="15"></line>
+                </svg>
+              </button>
+            </li>
+          `;
+        })
+        .join("");
+    }
+
+    function renderMonthView() {
+      const targetHabits = getFilteredHabits();
+      monthTitleEl.textContent = `${MONTH_NAMES[viewMonthIndex]} ${viewMonthYear}`;
+
+      const metrics = getMonthMetrics(viewMonthYear, viewMonthIndex, targetHabits);
+      monthStatRateEl.textContent = `${metrics.rate}%`;
+      monthStatDaysEl.textContent = String(metrics.activeDays);
+      monthStatCheckinsEl.textContent = String(metrics.totalCheckins);
+
+      const firstDayOfWeek = new Date(viewMonthYear, viewMonthIndex, 1).getDay();
+      const cells = [];
+
+      for (let i = 0; i < firstDayOfWeek; i++) {
+        cells.push(`<div class="aspect-square"></div>`);
+      }
+
+      for (let day = 1; day <= metrics.daysInMonth; day++) {
+        const key = `${viewMonthYear}-${String(viewMonthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const isFuture = key > todayKey;
+        const isToday = key === todayKey;
+        const { done, total, ratio } = getDayCompletion(key, targetHabits);
+
+        let bgClass = "bg-slate-100 text-slate-600";
+        if (isFuture) {
+          bgClass = "bg-slate-50 text-slate-300";
+        } else if (ratio === 1 && total > 0) {
+          bgClass = "bg-emerald-600 text-white font-semibold";
+        } else if (ratio >= 0.5) {
+          bgClass = "bg-emerald-400 text-white font-semibold";
+        } else if (ratio > 0) {
+          bgClass = "bg-emerald-200 text-emerald-900 font-semibold";
+        }
+
+        const ringClass = isToday ? "ring-2 ring-slate-900 ring-offset-1" : "";
+        const subText = !isFuture && total > 0 && done > 0
+          ? `<span class="text-[9px] leading-none opacity-85">${done}/${total}</span>`
+          : "";
+
+        cells.push(`
+          <button
+            type="button"
+            data-date="${key}"
+            ${isFuture ? "disabled" : ""}
+            title="${key}: ${done} of ${total} completed"
+            class="aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 text-xs transition-transform active:scale-95 ${bgClass} ${ringClass} ${isFuture ? "cursor-default" : "cursor-pointer hover:opacity-90"}"
+          >
+            <span class="leading-none">${day}</span>
+            ${subText}
+          </button>
+        `);
+      }
+
+      monthCalendarGridEl.innerHTML = cells.join("");
+    }
+
+    function renderYearView() {
+      const targetHabits = getFilteredHabits();
+      yearTitleEl.textContent = String(viewYear);
+
+      let totalYearCheckins = 0;
+      let totalYearPossible = 0;
+      let bestMonthName = "—";
+      let bestMonthCheckins = 0;
+
+      const cardsHtml = [];
+
+      for (let m = 0; m < 12; m++) {
+        const metrics = getMonthMetrics(viewYear, m, targetHabits);
+        totalYearCheckins += metrics.totalCheckins;
+        totalYearPossible += metrics.elapsedDays * targetHabits.length;
+
+        if (metrics.totalCheckins > bestMonthCheckins) {
+          bestMonthCheckins = metrics.totalCheckins;
+          bestMonthName = SHORT_MONTHS[m];
+        }
+
+        const isCurrentMonth = viewYear === todayDate.getFullYear() && m === todayDate.getMonth();
+        const isFutureMonth = viewYear > todayDate.getFullYear() || (viewYear === todayDate.getFullYear() && m > todayDate.getMonth());
+        const borderClass = isCurrentMonth ? "border-emerald-400 bg-emerald-50/40" : "border-slate-200/80 bg-slate-50/50 hover:border-slate-300";
+
+        cardsHtml.push(`
+          <button
+            type="button"
+            data-month="${m}"
+            class="text-left rounded-xl border p-3 transition-colors cursor-pointer ${borderClass}"
+          >
+            <div class="flex items-center justify-between gap-1 mb-1.5">
+              <span class="text-xs font-bold text-slate-800">${SHORT_MONTHS[m]}</span>
+              <span class="text-xs font-semibold ${isFutureMonth ? "text-slate-400" : "text-emerald-700"}">${isFutureMonth ? "—" : `${metrics.rate}%`}</span>
+            </div>
+            <div class="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden mb-1.5">
+              <div class="h-full bg-emerald-500 rounded-full" style="width: ${isFutureMonth ? 0 : metrics.rate}%;"></div>
+            </div>
+            <p class="text-[11px] text-slate-500">${metrics.totalCheckins} check-in${metrics.totalCheckins === 1 ? "" : "s"}</p>
+          </button>
+        `);
+      }
+
+      const yearRate = totalYearPossible === 0 ? 0 : Math.round((totalYearCheckins / totalYearPossible) * 100);
+      yearStatRateEl.textContent = `${yearRate}%`;
+      yearStatCheckinsEl.textContent = String(totalYearCheckins);
+      yearStatBestMonthEl.textContent = bestMonthName;
+      yearMonthsGridEl.innerHTML = cardsHtml.join("");
+    }
+
+    function render() {
+      // Update tab button styles
+      tabButtons.forEach((btn) => {
+        const isActive = btn.dataset.tab === activeTab;
+        btn.setAttribute("aria-selected", String(isActive));
+        if (isActive) {
+          btn.classList.add("bg-white", "text-slate-900", "shadow-sm");
+          btn.classList.remove("text-slate-600");
+        } else {
+          btn.classList.remove("bg-white", "text-slate-900", "shadow-sm");
+          btn.classList.add("text-slate-600");
+        }
+      });
+
+      viewTodayEl.classList.toggle("hidden", activeTab !== "today");
+      viewMonthEl.classList.toggle("hidden", activeTab !== "month");
+      viewYearEl.classList.toggle("hidden", activeTab !== "year");
+
+      renderFilterDropdowns();
+      renderTodayView();
+      renderMonthView();
+      renderYearView();
+    }
+
+    // =========================================================================
+    // 6. ACTIONS: Mutate state, save to localStorage, and re-render.
+    // =========================================================================
+    function addHabit(name) {
+      habits.push({ id: nextId++, name, history: {} });
+      saveState();
+      render();
+    }
+
+    function toggleHabit(id) {
+      const habit = habits.find((h) => h.id === id);
+      if (!habit) return;
+      if (habit.history[selectedDateKey]) {
+        delete habit.history[selectedDateKey];
+      } else {
+        habit.history[selectedDateKey] = true;
+      }
+      saveState();
+      render();
+    }
+
+    function deleteHabit(id) {
+      habits = habits.filter((h) => h.id !== id);
+      saveState();
+      render();
+    }
+
+    // =========================================================================
+    // 7. EVENTS: Tabs, date navigation, form submission, and clicks.
+    // =========================================================================
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        activeTab = btn.dataset.tab;
+        render();
+      });
+    });
+
+    prevDayBtn.addEventListener("click", () => {
+      selectedDateKey = addDays(selectedDateKey, -1);
+      render();
+    });
+
+    nextDayBtn.addEventListener("click", () => {
+      if (selectedDateKey < todayKey) {
+        selectedDateKey = addDays(selectedDateKey, 1);
+        render();
+      }
+    });
+
+    jumpTodayBtn.addEventListener("click", () => {
+      selectedDateKey = todayKey;
+      render();
+    });
+
+    habitFormEl.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const name = habitInputEl.value.trim();
+
+      if (!name) {
+        formErrorEl.textContent = "Please type a habit name before adding.";
+        formErrorEl.classList.remove("hidden");
+        habitInputEl.focus();
+        return;
+      }
+
+      formErrorEl.classList.add("hidden");
+      addHabit(name);
+      habitInputEl.value = "";
+      habitInputEl.focus();
+    });
+
+    habitInputEl.addEventListener("input", () => {
+      if (!formErrorEl.classList.contains("hidden")) {
+        formErrorEl.classList.add("hidden");
+      }
+    });
+
+    habitListEl.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+
+      const id = Number(button.dataset.id);
+      const action = button.dataset.action;
+
+      if (action === "toggle") {
+        toggleHabit(id);
+      } else if (action === "delete") {
+        deleteHabit(id);
+      }
+    });
+
+    prevMonthBtn.addEventListener("click", () => {
+      viewMonthIndex -= 1;
+      if (viewMonthIndex < 0) {
+        viewMonthIndex = 11;
+        viewMonthYear -= 1;
+      }
+      render();
+    });
+
+    nextMonthBtn.addEventListener("click", () => {
+      viewMonthIndex += 1;
+      if (viewMonthIndex > 11) {
+        viewMonthIndex = 0;
+        viewMonthYear += 1;
+      }
+      render();
+    });
+
+    monthHabitFilterEl.addEventListener("change", (event) => {
+      selectedHabitFilter = event.target.value;
+      render();
+    });
+
+    monthCalendarGridEl.addEventListener("click", (event) => {
+      const btn = event.target.closest("button[data-date]");
+      if (!btn || btn.disabled) return;
+      selectedDateKey = btn.dataset.date;
+      activeTab = "today";
+      render();
+    });
+
+    prevYearBtn.addEventListener("click", () => {
+      viewYear -= 1;
+      render();
+    });
+
+    nextYearBtn.addEventListener("click", () => {
+      viewYear += 1;
+      render();
+    });
+
+    yearHabitFilterEl.addEventListener("change", (event) => {
+      selectedHabitFilter = event.target.value;
+      render();
+    });
+
+    yearMonthsGridEl.addEventListener("click", (event) => {
+      const btn = event.target.closest("button[data-month]");
+      if (!btn) return;
+      viewMonthYear = viewYear;
+      viewMonthIndex = Number(btn.dataset.month);
+      activeTab = "month";
+      render();
+    });
+
+    // Draw the initial screen when the page loads.
+    render();
+  </script>
+</body>
+</html>
